@@ -109,7 +109,7 @@ class LogoutUser(APIView):
         return response
 
 
-class CurrentUserManagement(APIView):
+class CurrentUserDetail(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -117,16 +117,21 @@ class CurrentUserManagement(APIView):
         return Response({
             'username': user.first_name,
             'email': user.email,
+            'weight': user.weight,
+            'height': user.height,
+            'gender': user.gender,
         }, status=200)
-    
+
+
+class CurrentUserProfileUpdate(APIView):
+    permission_classes = [IsAuthenticated]
+
     def patch(self, request):
-        # Get the currently authenticated user
         user = request.user
 
-        # Deserialize and validate the input
         serializer = UpdateUserProfileSerializer(user, data=request.data, partial=True)
         if serializer.is_valid():
-            serializer.save()  # Save the updated data
+            serializer.save()
             return Response({
                 "message": "Profile updated successfully.",
                 "user": serializer.data

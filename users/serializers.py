@@ -65,11 +65,6 @@ class UpdateUserProfileSerializer(serializers.ModelSerializer):
             'first_name', 'last_name', 'gender', 'date_of_birth', 
             'avatar', 'height', 'weight'
         ]
-        extra_kwargs = {
-            'avatar': {'required': False},
-            'height': {'required': False},
-            'weight': {'required': False},
-        }
 
     def validate_date_of_birth(self, value):
         # Ensure date_of_birth is not in the future
