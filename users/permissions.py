@@ -1,6 +1,5 @@
 from rest_framework.permissions import BasePermission
-from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework.exceptions import AuthenticationFailed
+from rest_framework.exceptions import PermissionDenied
 
 # class IsTrainer(BasePermission):
 #     def has_permission(self, request, view):
@@ -11,14 +10,13 @@ class IsNotAuthenticated(BasePermission):
     Allows access only to unauthenticated users.
     """
 
+    message = "You are already logged in. Please log out to register."
+
     def has_permission(self, request, view):
-        auth = JWTAuthentication()
-        try:
-            result = auth.authenticate(request)
-            # If authentication succeeds, user is authenticated
-            if result is not None:
-                return False
-        except AuthenticationFailed:
-            pass  # Authentication failed, treat user as unauthenticated
+        refresh_token = request.COOKIES.get('refresh_token')
+        access_token = request.COOKIES.get('access_token')
+
+        if refresh_token or access_token:
+            raise PermissionDenied(self.message)
 
         return True

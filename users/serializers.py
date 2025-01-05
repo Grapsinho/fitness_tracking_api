@@ -57,3 +57,22 @@ class LoginUserSerializer(serializers.Serializer):
             )
         attrs['user'] = user  # Pass the authenticated user to the view
         return attrs
+    
+class UpdateUserProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = [
+            'first_name', 'last_name', 'gender', 'date_of_birth', 
+            'avatar', 'height', 'weight'
+        ]
+        extra_kwargs = {
+            'avatar': {'required': False},
+            'height': {'required': False},
+            'weight': {'required': False},
+        }
+
+    def validate_date_of_birth(self, value):
+        # Ensure date_of_birth is not in the future
+        if value and value > date.today():
+            raise serializers.ValidationError("Date of birth cannot be in the future.")
+        return value

@@ -1,12 +1,11 @@
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
-from .serializers import RegisterUserSerializer, LoginUserSerializer
+from .serializers import RegisterUserSerializer, LoginUserSerializer, UpdateUserProfileSerializer
 from utils.store_token import set_jwt_cookie
 from .permissions import IsNotAuthenticated
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
-from utils.get_user_from_jwt import get_user_from_jwt
 from .throttling import LoginRateThrottle
 from rest_framework.exceptions import Throttled
 
@@ -16,13 +15,6 @@ class RegisterUser(generics.CreateAPIView):
     permission_classes = [IsNotAuthenticated]
 
     def post(self, request):
-
-        if not self.has_permission(request):
-            return Response(
-                {"detail": "You are already logged in. Please log out to register."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
@@ -116,23 +108,31 @@ class LogoutUser(APIView):
 
         return response
 
-class CurrentUserManagement(APIView):
-    def get(self, request):
-        auth_header = request.headers.get('Authorization')
-        if not auth_header or not auth_header.startswith('Bearer '):
-            return Response({'error': 'Authorization token required'}, status=401)
 
-        token = auth_header.split(' ')[1]
-        try:
-            user = get_user_from_jwt(token)
-            
+class CurrentUserManagement(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        return Response({
+            'username': user.first_name,
+            'email': user.email,
+        }, status=200)
+    
+    def patch(self, request):
+        # Get the currently authenticated user
+        user = request.user
+
+        # Deserialize and validate the input
+        serializer = UpdateUserProfileSerializer(user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()  # Save the updated data
             return Response({
-                'username': user.first_name,
-                'email': user.email,
-            })
-        except Exception as e:
-            return Response({'error': str(e)}, status=401)
-        
+                "message": "Profile updated successfully.",
+                "user": serializer.data
+            }, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class RefreshAccessTokenView(APIView):
     permission_classes = [AllowAny]
@@ -177,10 +177,7 @@ class RefreshAccessTokenView(APIView):
                 token.blacklist()  # Blacklist the token
 
         except Exception as e:
-            return Response(
-                {"error": "Token could not be blacklisted", "details": str(e)},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            pass
 
         # Clear the cookies
         response = Response({'error': message}, status=status.HTTP_401_UNAUTHORIZED)
