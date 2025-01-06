@@ -1,13 +1,14 @@
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
-from .serializers import RegisterUserSerializer, LoginUserSerializer, UpdateUserProfileSerializer
+from .serializers import RegisterUserSerializer, LoginUserSerializer, UpdateUserProfileSerializer, UserProfileSerializer
 from utils.store_token import set_jwt_cookie
 from .permissions import IsNotAuthenticated
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 from .throttling import LoginRateThrottle
 from rest_framework.exceptions import Throttled
+from .models import User
 
 
 class RegisterUser(generics.CreateAPIView):
@@ -120,6 +121,7 @@ class CurrentUserDetail(APIView):
             'weight': user.weight,
             'height': user.height,
             'gender': user.gender,
+            'unique_id': user.unique_id,
         }, status=200)
 
 
@@ -138,6 +140,17 @@ class CurrentUserProfileUpdate(APIView):
             }, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class UserProfileView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = UserProfileSerializer
+    lookup_field = 'unique_id'
+    queryset = User.objects.all()
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
 
 class RefreshAccessTokenView(APIView):
     permission_classes = [AllowAny]

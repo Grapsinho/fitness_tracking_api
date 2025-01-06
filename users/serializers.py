@@ -71,3 +71,11 @@ class UpdateUserProfileSerializer(serializers.ModelSerializer):
         if value and value > date.today():
             raise serializers.ValidationError("Date of birth cannot be in the future.")
         return value
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = [
+            'first_name', 'last_name', 'gender', 'date_of_birth', 
+            'avatar', 'height', 'weight', 'unique_id'
+        ]

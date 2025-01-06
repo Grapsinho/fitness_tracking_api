@@ -83,7 +83,7 @@
     DONE შევასწორე ფერმიშენი IsNotAuthenticated
 
     გავაკეთო დოკუმენტაცია
-    დავამატო პროფაილის აბდეითი
+    DONE დავამატო პროფაილის აბდეითი
 
     Send Email Verification (Optional):
 
@@ -96,5 +96,57 @@
     outstanting ტოკენები უნდა წავშალო სანამ რამეს გავაკეთებ !!!!!!!!!!!!!!
     /////////////////////////////////////////////////
 
-    //"email": "testuser@example2.com",
-    //"password": "strongpassword123"
+
+-- Fitness Goal
+
+    DONE პირველ რიგში ვქმნი ახალ აპს
+    DONE შემდეგ ვაკეთებ ვიუსეტს ფიტნეს გოალისთვის
+    DONE ვიყენებ როუტერებს
+
+    ესეიგი იუზერს შეუძლია დაამატოს თავისთვის ახალი ფიტნეს გოალები, ეს ფიტნეს გოალები იქნება აქტიური მანამ სანამ 
+    იუზერი არ მორჩება ან არ მოუნდება რომ წაშალოს.
+
+    თუ ვადა გადაცდა ენდ დეითს მაშინ ის აქტივი გახდება ფოლსი და ეგ გოალი გახდება არა აქტიური
+
+    თუ იუზერს არ ექნება დაყენებული ენდ დეითი მაშინ მანამ ექნება ფიტნეს გოალი იუზერს სანამ თვითონ არ მოისურვებს მის წაშლას.
+
+    ვალიდაციები:
+
+    DONE ენდ დეითი არ შეუძლება უდრიდეს სტარტ დეითს ან იყოს მასზე ნაკლები!
+    DONE თუ ეხლანდელი დეითი უდრის ენდ დეითს მაშინ ის აქტივი უნდა გახდეს ფოსლი!
+
+
+    ესეიგი იუზერს შეუძლია შექმნას თავისი გოალი აღწერით,
+    ენდ დეითით, და გაოლ ტიპით.
+
+    ხოლო აბდეითის დროს შეუძლია გაანახლოს სტარტ დეითიც,
+    ენდ დეითიც, გოალ ტიპიც, აღწერაც და აქტიურია თუ არა.
+
+    და მერეც იგივე ვალიდაცია იქნება შევამოწმებ ენდ დეითს და სტარტ დეითს
+
+
+    List User Goals:
+
+        Endpoint: GET /fitness-goals/
+        Description: Fetch all goals for the authenticated user.
+
+    Add New Goal:
+
+        Endpoint: POST /fitness-goals/
+        Input: Goal type, target value, end date, and description.
+        Output: Created goal details.
+
+    Update Goal:
+
+        Endpoint: PUT /fitness-goals/:id/
+        Description: Modify an existing goal.
+
+    Deactivate Goal:
+
+        Endpoint: PATCH /fitness-goals/:id/deactivate/
+        Description: Set is_active to False without deleting the record.
+
+    Delete Goal:
+
+        Endpoint: DELETE /fitness-goals/:id/
+        Description: Remove a goal permanently.

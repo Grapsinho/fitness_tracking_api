@@ -36,6 +36,7 @@ INSTALLED_APPS = [
 
     # local apps
     "users.apps.UsersConfig",
+    "fitness_goal.apps.FitnessGoalConfig",
 
     # for api
     'rest_framework',
@@ -44,8 +45,7 @@ INSTALLED_APPS = [
 
     "corsheaders",
 
-    #Development
-    "debug_toolbar",
+    "silk",
 ]
 
 MIDDLEWARE = [
@@ -64,9 +64,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 
-
-    # debug-toolbar
-    "debug_toolbar.middleware.DebugToolbarMiddleware",
+    # for silk 
+    'silk.middleware.SilkyMiddleware',
 ]
 
 ROOT_URLCONF = 'core.urls'
@@ -188,9 +187,3 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'static/media')  # Directory to store media 
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-#this is for debug toolbar
-INTERNAL_IPS = [
-    '127.0.0.1',
-    'localhost'
-]

@@ -3,7 +3,7 @@ from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.core.validators import MinValueValidator, MaxValueValidator
 from datetime import date
 import uuid
-
+from django.db.models import Manager
 from decimal import Decimal
 
 from django.utils.translation import gettext_lazy as _
@@ -106,6 +106,13 @@ class User(AbstractUser):
     def __str__(self):
         return f"User email: {self.email}"
     
+# this model should be in a fitness_goal app but im lazy
+
+class FitnessGoalManager(Manager):
+    def deactivate_expired(self, user):
+        today = date.today()
+        return self.filter(end_date__lte=today, is_active=True, user=user).update(is_active=False)
+
 class FitnessGoal(models.Model):
     GOAL_CHOICES = [
         ('Weight Loss', 'Weight Loss'),
@@ -119,10 +126,12 @@ class FitnessGoal(models.Model):
     unique_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False, db_index=True)
 
     goal_type = models.CharField(max_length=35, choices=GOAL_CHOICES)
-    start_date = models.DateField(auto_now_add=True)
+    start_date = models.DateField(default=date.today, help_text="Start date of the goal")
     end_date = models.DateField(blank=True, null=True, help_text="Optional deadline for the goal")
     description = models.TextField(blank=True, help_text="Additional details about the goal")
     is_active = models.BooleanField(default=True)
+
+    objects = FitnessGoalManager()
 
     class Meta:
         verbose_name_plural = _("Fitness Goals")
