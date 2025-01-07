@@ -145,7 +145,7 @@ class UserProfileView(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = UserProfileSerializer
     lookup_field = 'unique_id'
-    queryset = User.objects.all()
+    queryset = User.objects.prefetch_related('fitness_goals')
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()

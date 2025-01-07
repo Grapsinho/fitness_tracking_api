@@ -4,6 +4,7 @@ from datetime import date
 from rest_framework.exceptions import ValidationError
 from rest_framework import status
 from django.contrib.auth import authenticate
+from fitness_goal.serializers import ListFitnessGoalSerializer
 
 class RegisterUserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(
@@ -73,9 +74,15 @@ class UpdateUserProfileSerializer(serializers.ModelSerializer):
         return value
 
 class UserProfileSerializer(serializers.ModelSerializer):
+    fitness_goals = ListFitnessGoalSerializer(many=True, read_only=True)
+
+
     class Meta:
         model = User
         fields = [
             'first_name', 'last_name', 'gender', 'date_of_birth', 
-            'avatar', 'height', 'weight', 'unique_id'
+            'avatar', 'height', 'weight', 'unique_id', 'fitness_goals'
         ]
+    
+    def get_fitness_goals(self, obj):
+        return obj.fitness_goals.values('goal_type', 'start_date', 'end_date', 'description', 'is_active')
