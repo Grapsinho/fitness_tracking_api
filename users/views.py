@@ -123,6 +123,7 @@ class CurrentUserDetail(APIView):
             'height': user.height,
             'gender': user.gender,
             'unique_id': user.unique_id,
+            'is_trainer': user.is_trainer
         }, status=200)
 
 

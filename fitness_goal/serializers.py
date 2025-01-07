@@ -2,7 +2,6 @@ from rest_framework import serializers
 from users.models import FitnessGoal
 from datetime import date
 from rest_framework.exceptions import ValidationError
-from rest_framework import status
 
 class CreateFitnessGoalSerializer(serializers.ModelSerializer):
 

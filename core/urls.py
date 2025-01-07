@@ -10,6 +10,7 @@ urlpatterns = [
     path('users/', include("users.urls")),
 
     path('fitness_goal/', include("fitness_goal.urls")),
+    path('exercises/', include("exercises.urls")),
 
     path('silk/', include('silk.urls', namespace='silk'))
 ]

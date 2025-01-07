@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     # local apps
     "users.apps.UsersConfig",
     "fitness_goal.apps.FitnessGoalConfig",
+    "exercises.apps.ExercisesConfig",
 
     # for api
     'rest_framework',

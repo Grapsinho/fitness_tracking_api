@@ -39,6 +39,7 @@ class RegisterUserSerializer(serializers.ModelSerializer):
             date_of_birth=validated_data.get('date_of_birth'),
             height=validated_data.get('height'),
             weight=validated_data.get('weight'),
+            is_trainer=validated_data.get('is_trainer'),
         )
 
         return user
