@@ -2,11 +2,12 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
 from rest_framework import status
 from users.models import FitnessGoal
-from .serializers import CreateFitnessGoalSerializer, ListFitnessGoalSerializer, UpdateFitnessGoalSerializer
+from .serializers import CreateFitnessGoalSerializer,  UpdateFitnessGoalSerializer, ListFitnessGoalSerializer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound
-from django_filters.rest_framework import DjangoFilterBackend
+from django.utils.translation import gettext_lazy as _
+from uuid import UUID
 
 
 class FitnessGoalViewSet(ModelViewSet):
@@ -16,52 +17,37 @@ class FitnessGoalViewSet(ModelViewSet):
     queryset = FitnessGoal.objects.all()
     permission_classes = [IsAuthenticated]
     lookup_field = "unique_id"
-    filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['is_active']
+    serializer_class = CreateFitnessGoalSerializer
+    
+    def get_queryset(self):
+        """
+        Get goals for the current user, but this view is not used for listing all goals.
+        """
 
+        return FitnessGoal.objects.filter(user=self.request.user)
+    
     def get_serializer_class(self):
         """
         Return different serializers for different actions.
         """
-        if self.action == 'list_goal':
+        if self.action == 'retrieve':
             return ListFitnessGoalSerializer
         return CreateFitnessGoalSerializer
     
-    def get_queryset(self):
-        """
-        Get queryset for current user
-        """
-
-        FitnessGoal.objects.deactivate_expired(self.request.user)
-        return FitnessGoal.objects.filter(user=self.request.user)
-    
     def get_object(self):
+        unique_id = self.kwargs.get(self.lookup_field)
+        
+        # Validate UUID format
+        try:
+            UUID(unique_id, version=4)
+        except ValueError:
+            raise NotFound({"detail": _("The provided unique ID is not in a valid format. Please check and try again.")})
+
         try:
             obj = FitnessGoal.objects.get(unique_id=self.kwargs.get(self.lookup_field), user=self.request.user)
         except FitnessGoal.DoesNotExist:
             raise NotFound({"detail": "The requested fitness goal does not exist or you do not have permission to access it."})
         return obj
-    
-    @action(detail=False, methods=['get'], url_path='list', url_name='list')
-    def list_goal(self, request, *args, **kwargs):
-        """
-        List goals with additional metadata.
-        """
-        queryset = self.filter_queryset(self.get_queryset())
-
-        serializer = self.get_serializer(queryset, many=True)
-        total_goals = queryset.count()
-        active_goals = queryset.filter(is_active=True).count()
-        inactive_goals = total_goals - active_goals
-        metadata = {
-            "total_goals": total_goals,
-            "active_goals": active_goals,
-            "inactive_goals": inactive_goals,
-        }
-        return Response({
-            "metadata": metadata,
-            "data": serializer.data
-        })
 
     @action(detail=False, methods=['post'], url_path='create', url_name='create')
     def create_goal(self, request, *args, **kwargs):

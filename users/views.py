@@ -8,7 +8,8 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 from .throttling import LoginRateThrottle
 from rest_framework.exceptions import Throttled
-from .models import User
+from .models import User, FitnessGoal
+from fitness_goal.serializers import ListFitnessGoalSerializer
 
 
 class RegisterUser(generics.CreateAPIView):
@@ -145,12 +146,44 @@ class UserProfileView(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = UserProfileSerializer
     lookup_field = 'unique_id'
-    queryset = User.objects.prefetch_related('fitness_goals')
+
+    def get_queryset(self):
+        """
+        Prefetch fitness goals and deactivate expired ones before returning the queryset.
+        """
+        queryset = User.objects.prefetch_related('fitness_goals')
+        return queryset
 
     def retrieve(self, request, *args, **kwargs):
+        """
+        Add filtering and metadata for fitness goals in the response.
+        """
         instance = self.get_object()
+
+        FitnessGoal.objects.deactivate_expired(user=instance)
+
+        fitness_goals = instance.fitness_goals.all()
+
+        # Apply filters (if provided)
+        is_active = request.query_params.get('is_active_goals')
+        if is_active is not None:
+            is_active = is_active.lower() == 'true'
+            fitness_goals = fitness_goals.filter(is_active=is_active)
+
+        # Collect metadata
+        total_goals = instance.fitness_goals.count()
+        active_goals = instance.fitness_goals.filter(is_active=True).count()
+        inactive_goals = total_goals - active_goals
+
         serializer = self.get_serializer(instance)
-        return Response(serializer.data)
+        response_data = serializer.data
+        response_data['fitness_goals'] = ListFitnessGoalSerializer(fitness_goals, many=True).data
+        response_data['metadata_for_goals'] = {
+            'total_goals': total_goals,
+            'active_goals': active_goals,
+            'inactive_goals': inactive_goals,
+        }
+        return Response(response_data)
 
 class RefreshAccessTokenView(APIView):
     permission_classes = [AllowAny]
