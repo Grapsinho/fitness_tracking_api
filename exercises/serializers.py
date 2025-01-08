@@ -1,8 +1,7 @@
 from rest_framework import serializers
 from .models import Exercise
 from rest_framework.exceptions import ValidationError
-from django.db import transaction
-from django.db import IntegrityError
+from django.db import transaction, IntegrityError
 
 class CreateExerciseSerializer(serializers.ModelSerializer):
 
@@ -90,4 +89,4 @@ class ListExerciseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Exercise
-        fields = ('name', 'category', 'description', 'equipment', 'repetitions', 'sets', 'muscle_group', "created_by", "unique_id", 'created_by')
+        fields = ("id", 'name', 'category', 'description', 'equipment', 'repetitions', 'sets', 'muscle_group', "created_by", "unique_id", 'created_by')
