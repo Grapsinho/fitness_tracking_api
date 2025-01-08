@@ -25,7 +25,7 @@ class ExerciseViewSet(ModelViewSet):
     ViewSet for managing Exercises.
     """
     queryset = Exercise.objects.all().select_related("created_by")
-    permission_classes = [IsAuthenticated, IsTrainer]
+    permission_classes = [IsAuthenticated]
     lookup_field = "unique_id"
     serializer_class = CreateExerciseSerializer
 
@@ -35,6 +35,14 @@ class ExerciseViewSet(ModelViewSet):
     filterset_fields = ['category', 'muscle_group', 'created_by']  # Exact match filters
     search_fields = ['name', 'description']  # Partial match for name
     ordering_fields = ['name', 'category', 'sets']
+
+    def get_permissions(self):
+        """
+        Dynamically assign permissions based on request method.
+        """
+        if self.request.method in ['GET', "RETRIEVE", 'HEAD', 'OPTIONS']:
+            return [permission() for permission in [IsAuthenticated]]
+        return [permission() for permission in [IsAuthenticated, IsTrainer]]
         
     def get_serializer_class(self):
         """
@@ -45,6 +53,13 @@ class ExerciseViewSet(ModelViewSet):
         return CreateExerciseSerializer
     
     def get_object(self):
+
+        """
+        Retrieve an object based on the unique_id. 
+        - For GET requests: Allow any authenticated user to access.
+        - For non-GET requests: Restrict access to the trainer who created the exercise.
+        """
+
         unique_id = self.kwargs.get(self.lookup_field)
         
         # Validate UUID format
@@ -53,6 +68,12 @@ class ExerciseViewSet(ModelViewSet):
         except ValueError:
             raise NotFound({"detail": _("The provided unique ID is not in a valid format. Please check and try again.")})
         
+        if self.request.method in ['GET', 'HEAD', 'OPTIONS']:
+            try:
+                obj = self.get_queryset().get(unique_id=unique_id)
+            except Exercise.DoesNotExist:
+                raise NotFound({"detail": "The requested exercise does not exist."})
+            return obj
 
         try:
             obj = self.get_queryset().get(unique_id=self.kwargs.get(self.lookup_field), created_by=self.request.user)
