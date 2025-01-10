@@ -3,6 +3,7 @@ import uuid
 from users.models import User
 from exercises.models import Exercise
 from django.utils.translation import gettext_lazy as _
+from django.db.models import F
 
 class WorkoutPlan(models.Model):
     """
@@ -54,6 +55,24 @@ class WorkoutExercise(models.Model):
     class Meta:
         verbose_name_plural = _("Workout Exercises")
         unique_together = ('workout_plan', 'exercise', 'order')
+        ordering = ['order']
+
+    def delete(self, *args, **kwargs):
+        """
+        Override the delete method to adjust the order of other exercises in the workout plan.
+        """
+        # Cache the workout_plan ID and the order of the exercise being deleted
+        workout_plan_id = self.workout_plan_id
+        deleted_order = self.order
+
+        # Call the default delete behavior
+        super().delete(*args, **kwargs)
+
+        # Adjust the order of remaining exercises
+        WorkoutExercise.objects.filter(
+            workout_plan_id=workout_plan_id,
+            order__gt=deleted_order
+        ).update(order=F("order") - 1)
 
     def __str__(self):
         return f"Workout: {self.workout_plan.title}, Exercise: {self.exercise.name}, Order: {self.order}"

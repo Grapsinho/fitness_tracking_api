@@ -64,9 +64,34 @@ class CreateWorkoutExerciseSerializer(serializers.ModelSerializer):
             Q(workout_plan=workout_plan, exercise=exercise)
         ).exists():
             raise serializers.ValidationError({
-                "detail": "The order or exercise already exists in the workout plan."
+                "detail": f"The order ({order}) or exercise ({exercise.name}) already exists in the workout plan."
             })
 
+        return attrs
+
+class UpdateWorkoutExerciseSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField()
+
+    class Meta:
+        model = WorkoutExercise
+        fields = ("id", 'order', 'repetitions', 'sets', 'rest_time', 'exercise')
+    
+    def validate(self, attrs):
+        """
+        Validate the order and uniqueness of the exercise within the workout plan.
+        """
+
+        pk = self.instance.workout_plan_id
+        exercise = attrs.get('exercise')
+        order = attrs.get('order')
+
+        if WorkoutExercise.objects.filter(
+            Q(workout_plan_id=pk, order=order) | 
+            Q(workout_plan_id=pk, exercise=exercise)
+        ).exists():
+            raise serializers.ValidationError({
+                "detail": f"The order ({order}) or exercise already exists in the workout plan."
+            })
 
         return attrs
 
