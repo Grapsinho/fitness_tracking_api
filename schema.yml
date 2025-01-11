@@ -1,0 +1,1797 @@
+openapi: 3.0.3
+info:
+  title: Fitness Tracking API
+  version: 1.0.0
+  description: API documentation for the fitness tracking project.
+paths:
+  /exercises/:
+    get:
+      operationId: exercises_list
+      description: ViewSet for managing Exercises.
+      parameters:
+      - in: query
+        name: category
+        schema:
+          type: string
+          enum:
+          - Aerobic
+          - Calisthenics
+          - Cardio
+          - Flexibility
+          - Strength
+          - Yoga
+        description: |-
+          Type of exercise
+
+          * `Strength` - Strength
+          * `Cardio` - Cardio
+          * `Yoga` - Yoga
+          * `Flexibility` - Flexibility
+          * `Calisthenics` - Calisthenics
+          * `Aerobic` - Aerobic
+      - in: query
+        name: created_by
+        schema:
+          type: integer
+      - in: query
+        name: muscle_group
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - exercises
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedListExerciseList'
+          description: ''
+    post:
+      operationId: exercises_create
+      description: ViewSet for managing Exercises.
+      tags:
+      - exercises
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateExercise'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CreateExercise'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CreateExercise'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateExercise'
+          description: ''
+  /exercises/{unique_id}/:
+    get:
+      operationId: exercises_retrieve
+      description: ViewSet for managing Exercises.
+      parameters:
+      - in: path
+        name: unique_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - exercises
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListExercise'
+          description: ''
+    put:
+      operationId: exercises_update
+      description: ViewSet for managing Exercises.
+      parameters:
+      - in: path
+        name: unique_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - exercises
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateExercise'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CreateExercise'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CreateExercise'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateExercise'
+          description: ''
+    patch:
+      operationId: exercises_partial_update
+      description: ViewSet for managing Exercises.
+      parameters:
+      - in: path
+        name: unique_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - exercises
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCreateExercise'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCreateExercise'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCreateExercise'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateExercise'
+          description: ''
+    delete:
+      operationId: exercises_destroy
+      description: ViewSet for managing Exercises.
+      parameters:
+      - in: path
+        name: unique_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - exercises
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /exercises/{unique_id}/delete/:
+    delete:
+      operationId: exercises_delete_destroy
+      description: Custom route for deleting a specific exercise.
+      parameters:
+      - in: path
+        name: unique_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - exercises
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /exercises/{unique_id}/update/:
+    patch:
+      operationId: exercises_update_partial_update
+      description: Custom route for updating a specific exercise.
+      parameters:
+      - in: path
+        name: unique_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - exercises
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCreateExercise'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCreateExercise'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCreateExercise'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateExercise'
+          description: ''
+  /exercises/bulk-create/:
+    post:
+      operationId: exercises_bulk_create_create
+      description: Handle the creation of multiple exercises at once.
+      tags:
+      - exercises
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateExercise'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CreateExercise'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CreateExercise'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateExercise'
+          description: ''
+  /exercises/create/:
+    post:
+      operationId: exercises_create_create
+      description: Handle the creation of a exercise.
+      tags:
+      - exercises
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateExercise'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CreateExercise'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CreateExercise'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateExercise'
+          description: ''
+  /fitness_goal/:
+    get:
+      operationId: fitness_goal_list
+      description: ViewSet for managing Fitness Goals.
+      tags:
+      - fitness_goal
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CreateFitnessGoal'
+          description: ''
+    post:
+      operationId: fitness_goal_create
+      description: ViewSet for managing Fitness Goals.
+      tags:
+      - fitness_goal
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateFitnessGoal'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CreateFitnessGoal'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CreateFitnessGoal'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateFitnessGoal'
+          description: ''
+  /fitness_goal/{unique_id}/:
+    get:
+      operationId: fitness_goal_retrieve
+      description: ViewSet for managing Fitness Goals.
+      parameters:
+      - in: path
+        name: unique_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - fitness_goal
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListFitnessGoal'
+          description: ''
+    put:
+      operationId: fitness_goal_update
+      description: ViewSet for managing Fitness Goals.
+      parameters:
+      - in: path
+        name: unique_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - fitness_goal
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateFitnessGoal'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CreateFitnessGoal'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CreateFitnessGoal'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateFitnessGoal'
+          description: ''
+    patch:
+      operationId: fitness_goal_partial_update
+      description: ViewSet for managing Fitness Goals.
+      parameters:
+      - in: path
+        name: unique_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - fitness_goal
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCreateFitnessGoal'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCreateFitnessGoal'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCreateFitnessGoal'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateFitnessGoal'
+          description: ''
+    delete:
+      operationId: fitness_goal_destroy
+      description: ViewSet for managing Fitness Goals.
+      parameters:
+      - in: path
+        name: unique_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - fitness_goal
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /fitness_goal/{unique_id}/delete/:
+    delete:
+      operationId: fitness_goal_delete_destroy
+      description: Custom route for deleting a specific fitness goal.
+      parameters:
+      - in: path
+        name: unique_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - fitness_goal
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /fitness_goal/{unique_id}/update/:
+    patch:
+      operationId: fitness_goal_update_partial_update
+      description: Custom route for updating a specific fitness goal.
+      parameters:
+      - in: path
+        name: unique_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - fitness_goal
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCreateFitnessGoal'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCreateFitnessGoal'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCreateFitnessGoal'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateFitnessGoal'
+          description: ''
+  /fitness_goal/create/:
+    post:
+      operationId: fitness_goal_create_create
+      description: Handle the creation of a fitness goal.
+      tags:
+      - fitness_goal
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateFitnessGoal'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CreateFitnessGoal'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CreateFitnessGoal'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateFitnessGoal'
+          description: ''
+  /users/current_user/:
+    get:
+      operationId: users_current_user_retrieve
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+          description: ''
+  /users/current_user/profile_update/:
+    patch:
+      operationId: users_current_user_profile_update_partial_update
+      tags:
+      - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateUserProfile'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateUserProfile'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateUserProfile'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateUserProfile'
+          description: ''
+  /users/login/:
+    post:
+      operationId: users_login_create
+      tags:
+      - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginUser'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LoginUser'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LoginUser'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginUser'
+          description: ''
+  /users/logout/:
+    post:
+      operationId: users_logout_create
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /users/register/:
+    post:
+      operationId: users_register_create
+      tags:
+      - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterUser'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RegisterUser'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RegisterUser'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterUser'
+          description: ''
+  /users/token/refresh/:
+    post:
+      operationId: users_token_refresh_create
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /users/user_profile/{unique_id}/:
+    get:
+      operationId: users_user_profile_retrieve
+      parameters:
+      - in: path
+        name: unique_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+          description: ''
+  /workout_management/workout_exercises/:
+    get:
+      operationId: workout_management_workout_exercises_list
+      description: ViewSet for managing Workout Exercises.
+      tags:
+      - workout_management
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CreateWorkoutExercise'
+          description: ''
+    post:
+      operationId: workout_management_workout_exercises_create
+      description: ViewSet for managing Workout Exercises.
+      tags:
+      - workout_management
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWorkoutExercise'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CreateWorkoutExercise'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CreateWorkoutExercise'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateWorkoutExercise'
+          description: ''
+  /workout_management/workout_exercises/{id}/:
+    get:
+      operationId: workout_management_workout_exercises_retrieve
+      description: ViewSet for managing Workout Exercises.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this workout exercise.
+        required: true
+      tags:
+      - workout_management
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateWorkoutExercise'
+          description: ''
+    put:
+      operationId: workout_management_workout_exercises_update
+      description: ViewSet for managing Workout Exercises.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this workout exercise.
+        required: true
+      tags:
+      - workout_management
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWorkoutExercise'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CreateWorkoutExercise'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CreateWorkoutExercise'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateWorkoutExercise'
+          description: ''
+    patch:
+      operationId: workout_management_workout_exercises_partial_update
+      description: ViewSet for managing Workout Exercises.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this workout exercise.
+        required: true
+      tags:
+      - workout_management
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCreateWorkoutExercise'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCreateWorkoutExercise'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCreateWorkoutExercise'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateWorkoutExercise'
+          description: ''
+    delete:
+      operationId: workout_management_workout_exercises_destroy
+      description: ViewSet for managing Workout Exercises.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this workout exercise.
+        required: true
+      tags:
+      - workout_management
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /workout_management/workout_exercises/{id}/delete/:
+    delete:
+      operationId: workout_management_workout_exercises_delete_destroy
+      description: Custom route for deleting a specific workout exercise.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this workout exercise.
+        required: true
+      tags:
+      - workout_management
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /workout_management/workout_exercises/{id}/update/:
+    patch:
+      operationId: workout_management_workout_exercises_update_partial_update
+      description: Handle the update of a workout exercise.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this workout exercise.
+        required: true
+      tags:
+      - workout_management
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCreateWorkoutExercise'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCreateWorkoutExercise'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCreateWorkoutExercise'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateWorkoutExercise'
+          description: ''
+  /workout_management/workout_exercises/bulk-update/:
+    patch:
+      operationId: workout_management_workout_exercises_bulk_update_partial_update
+      description: |-
+        Handle bulk updates for workout exercises by temporarily removing orders
+        only for those being updated and reassigning them with new values.
+      tags:
+      - workout_management
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCreateWorkoutExercise'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCreateWorkoutExercise'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCreateWorkoutExercise'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateWorkoutExercise'
+          description: ''
+  /workout_management/workout_exercises/create/:
+    post:
+      operationId: workout_management_workout_exercises_create_create
+      description: Handle the creation of a workout exercise.
+      tags:
+      - workout_management
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWorkoutExercise'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CreateWorkoutExercise'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CreateWorkoutExercise'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateWorkoutExercise'
+          description: ''
+  /workout_management/workout_plan/:
+    get:
+      operationId: workout_management_workout_plan_list
+      description: ViewSet for managing Workout Plan.
+      parameters:
+      - in: query
+        name: created_by
+        schema:
+          type: integer
+      - in: query
+        name: difficulty_level
+        schema:
+          type: string
+          enum:
+          - Advanced
+          - Beginner
+          - Intermediate
+        description: |-
+          * `Beginner` - Beginner
+          * `Intermediate` - Intermediate
+          * `Advanced` - Advanced
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - workout_management
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedWorkoutPlanDetailList'
+          description: ''
+    post:
+      operationId: workout_management_workout_plan_create
+      description: ViewSet for managing Workout Plan.
+      tags:
+      - workout_management
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWorkoutPlan'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CreateWorkoutPlan'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CreateWorkoutPlan'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateWorkoutPlan'
+          description: ''
+  /workout_management/workout_plan/{unique_id}/:
+    get:
+      operationId: workout_management_workout_plan_retrieve
+      description: ViewSet for managing Workout Plan.
+      parameters:
+      - in: path
+        name: unique_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workout_management
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkoutPlanDetail'
+          description: ''
+    put:
+      operationId: workout_management_workout_plan_update
+      description: ViewSet for managing Workout Plan.
+      parameters:
+      - in: path
+        name: unique_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workout_management
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWorkoutPlan'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CreateWorkoutPlan'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CreateWorkoutPlan'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateWorkoutPlan'
+          description: ''
+    patch:
+      operationId: workout_management_workout_plan_partial_update
+      description: ViewSet for managing Workout Plan.
+      parameters:
+      - in: path
+        name: unique_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workout_management
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCreateWorkoutPlan'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCreateWorkoutPlan'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCreateWorkoutPlan'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateWorkoutPlan'
+          description: ''
+    delete:
+      operationId: workout_management_workout_plan_destroy
+      description: ViewSet for managing Workout Plan.
+      parameters:
+      - in: path
+        name: unique_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workout_management
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /workout_management/workout_plan/{unique_id}/delete/:
+    delete:
+      operationId: workout_management_workout_plan_delete_destroy
+      description: Custom route for deleting a specific workout plan.
+      parameters:
+      - in: path
+        name: unique_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workout_management
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /workout_management/workout_plan/{unique_id}/update/:
+    patch:
+      operationId: workout_management_workout_plan_update_partial_update
+      description: Custom route for updating a specific workout plan.
+      parameters:
+      - in: path
+        name: unique_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - workout_management
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCreateWorkoutPlan'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCreateWorkoutPlan'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCreateWorkoutPlan'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateWorkoutPlan'
+          description: ''
+  /workout_management/workout_plan/create/:
+    post:
+      operationId: workout_management_workout_plan_create_create
+      description: Handle the creation of a workout plan.
+      tags:
+      - workout_management
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWorkoutPlan'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CreateWorkoutPlan'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CreateWorkoutPlan'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateWorkoutPlan'
+          description: ''
+components:
+  schemas:
+    BlankEnum:
+      enum:
+      - ''
+    CategoryEnum:
+      enum:
+      - Strength
+      - Cardio
+      - Yoga
+      - Flexibility
+      - Calisthenics
+      - Aerobic
+      type: string
+      description: |-
+        * `Strength` - Strength
+        * `Cardio` - Cardio
+        * `Yoga` - Yoga
+        * `Flexibility` - Flexibility
+        * `Calisthenics` - Calisthenics
+        * `Aerobic` - Aerobic
+    CreateExercise:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 50
+        category:
+          allOf:
+          - $ref: '#/components/schemas/CategoryEnum'
+          description: |-
+            Type of exercise
+
+            * `Strength` - Strength
+            * `Cardio` - Cardio
+            * `Yoga` - Yoga
+            * `Flexibility` - Flexibility
+            * `Calisthenics` - Calisthenics
+            * `Aerobic` - Aerobic
+        description:
+          type: string
+          description: Additional details about the exercise
+        equipment: {}
+        repetitions:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        sets:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        muscle_group:
+          type: string
+          maxLength: 50
+      required:
+      - category
+      - description
+      - muscle_group
+      - name
+    CreateFitnessGoal:
+      type: object
+      properties:
+        goal_type:
+          $ref: '#/components/schemas/GoalTypeEnum'
+        end_date:
+          type: string
+          format: date
+          nullable: true
+          description: Optional deadline for the goal
+        description:
+          type: string
+          description: Additional details about the goal
+      required:
+      - goal_type
+    CreateWorkoutExercise:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        workout_plan:
+          type: integer
+        exercise:
+          type: integer
+        exercise_details:
+          allOf:
+          - $ref: '#/components/schemas/ListExercise'
+          readOnly: true
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          default: 1
+          description: Order of the exercise in the workout plan
+        repetitions:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          description: Number of repetitions for this exercise
+        sets:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          description: Number of sets for this exercise
+        rest_time:
+          type: string
+          nullable: true
+          description: Rest time after completing this exercise
+      required:
+      - exercise
+      - exercise_details
+      - id
+      - workout_plan
+    CreateWorkoutPlan:
+      type: object
+      properties:
+        title:
+          type: string
+          description: Title of the workout plan
+          maxLength: 100
+        difficulty_level:
+          $ref: '#/components/schemas/DifficultyLevelEnum'
+        description:
+          type: string
+          description: Details about the workout plan
+        workout_banner:
+          type: string
+          format: uri
+          nullable: true
+      required:
+      - difficulty_level
+      - title
+    DifficultyLevelEnum:
+      enum:
+      - Beginner
+      - Intermediate
+      - Advanced
+      type: string
+      description: |-
+        * `Beginner` - Beginner
+        * `Intermediate` - Intermediate
+        * `Advanced` - Advanced
+    GenderEnum:
+      enum:
+      - Men
+      - Woman
+      type: string
+      description: |-
+        * `Men` - Men
+        * `Woman` - Woman
+    GoalTypeEnum:
+      enum:
+      - Weight Loss
+      - Strength Building
+      - Cardiovascular Fitness
+      - Flexibility
+      - BodyBuilding
+      type: string
+      description: |-
+        * `Weight Loss` - Weight Loss
+        * `Strength Building` - Strength Building
+        * `Cardiovascular Fitness` - Cardiovascular Fitness
+        * `Flexibility` - Flexibility
+        * `BodyBuilding` - BodyBuilding
+    ListExercise:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 50
+        category:
+          allOf:
+          - $ref: '#/components/schemas/CategoryEnum'
+          description: |-
+            Type of exercise
+
+            * `Strength` - Strength
+            * `Cardio` - Cardio
+            * `Yoga` - Yoga
+            * `Flexibility` - Flexibility
+            * `Calisthenics` - Calisthenics
+            * `Aerobic` - Aerobic
+        description:
+          type: string
+          description: Additional details about the exercise
+        equipment: {}
+        repetitions:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        sets:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        muscle_group:
+          type: string
+          maxLength: 50
+        created_by:
+          type: string
+          format: uuid
+          readOnly: true
+        unique_id:
+          type: string
+          format: uuid
+          readOnly: true
+      required:
+      - category
+      - created_by
+      - description
+      - id
+      - muscle_group
+      - name
+      - unique_id
+    ListFitnessGoal:
+      type: object
+      properties:
+        goal_type:
+          $ref: '#/components/schemas/GoalTypeEnum'
+        end_date:
+          type: string
+          format: date
+          nullable: true
+          description: Optional deadline for the goal
+        description:
+          type: string
+          description: Additional details about the goal
+        start_date:
+          type: string
+          format: date
+          description: Start date of the goal
+        is_active:
+          type: boolean
+        unique_id:
+          type: string
+          format: uuid
+          readOnly: true
+      required:
+      - goal_type
+      - unique_id
+    LoginUser:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          writeOnly: true
+          minLength: 8
+      required:
+      - email
+      - password
+    NullEnum:
+      enum:
+      - null
+    PaginatedListExerciseList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ListExercise'
+    PaginatedWorkoutPlanDetailList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkoutPlanDetail'
+    PatchedCreateExercise:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 50
+        category:
+          allOf:
+          - $ref: '#/components/schemas/CategoryEnum'
+          description: |-
+            Type of exercise
+
+            * `Strength` - Strength
+            * `Cardio` - Cardio
+            * `Yoga` - Yoga
+            * `Flexibility` - Flexibility
+            * `Calisthenics` - Calisthenics
+            * `Aerobic` - Aerobic
+        description:
+          type: string
+          description: Additional details about the exercise
+        equipment: {}
+        repetitions:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        sets:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        muscle_group:
+          type: string
+          maxLength: 50
+    PatchedCreateFitnessGoal:
+      type: object
+      properties:
+        goal_type:
+          $ref: '#/components/schemas/GoalTypeEnum'
+        end_date:
+          type: string
+          format: date
+          nullable: true
+          description: Optional deadline for the goal
+        description:
+          type: string
+          description: Additional details about the goal
+    PatchedCreateWorkoutExercise:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        workout_plan:
+          type: integer
+        exercise:
+          type: integer
+        exercise_details:
+          allOf:
+          - $ref: '#/components/schemas/ListExercise'
+          readOnly: true
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          default: 1
+          description: Order of the exercise in the workout plan
+        repetitions:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          description: Number of repetitions for this exercise
+        sets:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          description: Number of sets for this exercise
+        rest_time:
+          type: string
+          nullable: true
+          description: Rest time after completing this exercise
+    PatchedCreateWorkoutPlan:
+      type: object
+      properties:
+        title:
+          type: string
+          description: Title of the workout plan
+          maxLength: 100
+        difficulty_level:
+          $ref: '#/components/schemas/DifficultyLevelEnum'
+        description:
+          type: string
+          description: Details about the workout plan
+        workout_banner:
+          type: string
+          format: uri
+          nullable: true
+    PatchedUpdateUserProfile:
+      type: object
+      properties:
+        first_name:
+          type: string
+          maxLength: 255
+        last_name:
+          type: string
+          maxLength: 255
+        gender:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/GenderEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        date_of_birth:
+          type: string
+          format: date
+          nullable: true
+        avatar:
+          type: string
+          format: uri
+        height:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,2}(?:\.\d{0,2})?$
+          description: Height in meters (e.g., 1.75).
+        weight:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          description: Weight in kilograms (e.g., 70.5).
+    RegisterUser:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          nullable: true
+          maxLength: 254
+        first_name:
+          type: string
+          maxLength: 255
+        last_name:
+          type: string
+          maxLength: 255
+        password:
+          type: string
+          writeOnly: true
+          minLength: 8
+        gender:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/GenderEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        date_of_birth:
+          type: string
+          format: date
+          nullable: true
+        height:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,2}(?:\.\d{0,2})?$
+          description: Height in meters (e.g., 1.75).
+        weight:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          description: Weight in kilograms (e.g., 70.5).
+        is_trainer:
+          type: boolean
+          nullable: true
+          description: If you do not check this box, it is assumed that you are a
+            regular user.
+      required:
+      - first_name
+      - height
+      - last_name
+      - password
+      - weight
+    UpdateUserProfile:
+      type: object
+      properties:
+        first_name:
+          type: string
+          maxLength: 255
+        last_name:
+          type: string
+          maxLength: 255
+        gender:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/GenderEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        date_of_birth:
+          type: string
+          format: date
+          nullable: true
+        avatar:
+          type: string
+          format: uri
+        height:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,2}(?:\.\d{0,2})?$
+          description: Height in meters (e.g., 1.75).
+        weight:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          description: Weight in kilograms (e.g., 70.5).
+      required:
+      - first_name
+      - height
+      - last_name
+      - weight
+    UserProfile:
+      type: object
+      properties:
+        first_name:
+          type: string
+          maxLength: 255
+        last_name:
+          type: string
+          maxLength: 255
+        gender:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/GenderEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        date_of_birth:
+          type: string
+          format: date
+          nullable: true
+        avatar:
+          type: string
+          format: uri
+        height:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,2}(?:\.\d{0,2})?$
+          description: Height in meters (e.g., 1.75).
+        weight:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          description: Weight in kilograms (e.g., 70.5).
+        unique_id:
+          type: string
+          format: uuid
+          readOnly: true
+        fitness_goals:
+          type: array
+          items:
+            $ref: '#/components/schemas/ListFitnessGoal'
+          readOnly: true
+      required:
+      - first_name
+      - fitness_goals
+      - height
+      - last_name
+      - unique_id
+      - weight
+    WorkoutPlanDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        unique_id:
+          type: string
+          format: uuid
+          readOnly: true
+        created_by:
+          type: integer
+        title:
+          type: string
+          description: Title of the workout plan
+          maxLength: 100
+        description:
+          type: string
+          description: Details about the workout plan
+        difficulty_level:
+          $ref: '#/components/schemas/DifficultyLevelEnum'
+        workout_banner:
+          type: string
+          format: uri
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        workout_exercises:
+          type: array
+          items:
+            $ref: '#/components/schemas/CreateWorkoutExercise'
+          readOnly: true
+      required:
+      - created_at
+      - created_by
+      - difficulty_level
+      - id
+      - title
+      - unique_id
+      - updated_at
+      - workout_exercises
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

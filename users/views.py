@@ -87,6 +87,7 @@ class LoginUser(APIView):
         return super().handle_exception(exc)
 
 class LogoutUser(APIView):
+    serializer_class = None
 
     def post(self, request):
         try:
@@ -113,27 +114,21 @@ class LogoutUser(APIView):
 
 class CurrentUserDetail(APIView):
     permission_classes = [IsAuthenticated]
+    serializer_class = UserProfileSerializer  # Add the serializer_class
 
     def get(self, request):
         user = request.user
-        return Response({
-            'username': user.first_name,
-            'email': user.email,
-            'weight': user.weight,
-            'height': user.height,
-            'gender': user.gender,
-            'unique_id': user.unique_id,
-            'is_trainer': user.is_trainer
-        }, status=200)
+        serializer = self.serializer_class(user)
+        return Response(serializer.data, status=200)
 
 
 class CurrentUserProfileUpdate(APIView):
     permission_classes = [IsAuthenticated]
+    serializer_class = UpdateUserProfileSerializer
 
     def patch(self, request):
         user = request.user
-
-        serializer = UpdateUserProfileSerializer(user, data=request.data, partial=True)
+        serializer = self.serializer_class(user, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response({
@@ -188,6 +183,7 @@ class UserProfileView(generics.RetrieveAPIView):
 
 class RefreshAccessTokenView(APIView):
     permission_classes = [AllowAny]
+    serializer_class = None
 
     def post(self, request):
         refresh_token = request.data.get("refresh_token")

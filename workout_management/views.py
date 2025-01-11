@@ -170,39 +170,66 @@ class WorkoutExerciseViewSet(ModelViewSet):
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-    @action(detail=False, methods=['patch'], url_path='bulk-update', url_name='bulk_update')
+    @action(detail=False, methods=["patch"], url_path="bulk-update", url_name="bulk_update")
     def bulk_update(self, request, *args, **kwargs):
         """
-        Handle bulk updates for workout exercises by temporarily removing orders
-        only for those being updated and reassigning them with new values.
+        Handle bulk updates for workout exercises using batch updates.
         """
-        data = request.data.get("workout_exercises", [])
-        if not data:
-            return Response({"detail": "No data provided for bulk update."}, status=status.HTTP_400_BAD_REQUEST)
 
-        try:
-            instance_map, workout_plan_id = self._validate_bulk_update_data(data)
-            self._nullify_orders(instance_map)
-            self._save_updates(instance_map)
-            return Response({"message": "Update successful."}, status=status.HTTP_200_OK)
+        with transaction.atomic():
+            data = request.data.get("workout_exercises", [])
+            if not data:
+                return Response({"detail": "No data provided for bulk update."}, status=status.HTTP_400_BAD_REQUEST)
 
-        except (WorkoutExercise.DoesNotExist, ValidationError) as e:
-            return Response({"detail": e.detail}, status=status.HTTP_400_BAD_REQUEST)
-        except IntegrityError as e:
-            return Response({"detail": f"An error occurred: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        except Exception as e:
-            return Response({"detail": f"Unexpected error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            try:
+                # Validate data and prepare instance map
+                instance_map, workout_plan_id = self._validate_bulk_update_data(data)
+
+                # Batch update: Nullify orders
+                self._nullify_orders_batch(instance_map)
+
+                # Batch update: Apply updates
+                self._save_updates_batch(instance_map)
+
+                return Response({"message": "Update successful."}, status=status.HTTP_200_OK)
+
+            except (WorkoutExercise.DoesNotExist, ValidationError) as e:
+                return Response({"detail": e.detail}, status=status.HTTP_400_BAD_REQUEST)
+            except IntegrityError as e:
+                return Response({"detail": f"An error occurred: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            except Exception as e:
+                return Response({"detail": f"Unexpected error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+    # util methods to update multiple instances
     def _validate_bulk_update_data(self, data):
         """
-        Validate the bulk update payload and prepare instance mapping.
+        Validate the bulk update payload and prepare instance mapping efficiently.
         """
+        if not data:
+            raise ValidationError("No data provided for validation.")
+
+        # Extract IDs from the payload
+        instance_ids = [item.get("id") for item in data if "id" in item]
+        if not instance_ids:
+            raise ValidationError("Each item in the payload must include an 'id' field.")
+
+        # Batch fetch all instances
+        instances = WorkoutExercise.objects.filter(id__in=instance_ids).select_related("exercise")
+        instance_map = {instance.id: instance for instance in instances}
+
+        # Validate all provided IDs exist in the database
+        missing_ids = set(instance_ids) - set(instance_map.keys())
+        if missing_ids:
+            raise ValidationError(f"The following IDs were not found: {', '.join(map(str, missing_ids))}")
+
+        # Initialize variables for validation
         workout_plan_id = None
-        instance_map = {}
         new_orders = set()
         new_exercises = set()
+        validated_instance_map = {}
 
+        # Validate each item in the payload
         for item in data:
             instance_id = item.get("id")
             new_order = item.get("order")
@@ -211,26 +238,31 @@ class WorkoutExerciseViewSet(ModelViewSet):
             sets = item.get("sets")
             rest_time = item.get("rest_time")
 
-            if not instance_id:
-                raise ValidationError("Each item must include 'id'.")
+            # Fetch the instance
+            instance = instance_map[instance_id]
 
-            instance = WorkoutExercise.objects.get(pk=instance_id)
+            # Ensure all instances belong to the same workout plan
             if workout_plan_id is None:
                 workout_plan_id = instance.workout_plan_id
             elif workout_plan_id != instance.workout_plan_id:
-                raise ValidationError("All exercises must belong to the same workout plan.")
+                raise ValidationError(f"All exercises must belong to the same workout plan. Mismatch found for ID: {instance_id}")
 
+            # Check for duplicate orders in the payload
             if new_order is not None:
                 if new_order in new_orders:
-                    raise ValidationError(f"Duplicate order {new_order} found in the payload.")
+                    raise ValidationError(f"Duplicate order '{new_order}' found in the payload.")
+                if new_order < 1:
+                    raise ValidationError(f"Invalid order '{new_order}' for ID: {instance_id}. Order must be a greater than 0.")
                 new_orders.add(new_order)
 
+            # Check for duplicate exercise IDs in the payload
             if new_exercise_id is not None:
                 if new_exercise_id in new_exercises:
-                    raise ValidationError(f"Duplicate exercise ID {new_exercise_id} found in the payload.")
+                    raise ValidationError(f"Duplicate exercise ID '{new_exercise_id}' found in the payload.")
                 new_exercises.add(new_exercise_id)
 
-            instance_map[instance_id] = {
+            # Prepare the validated instance map
+            validated_instance_map[instance_id] = {
                 "instance": instance,
                 "new_order": new_order,
                 "new_exercise_id": new_exercise_id,
@@ -239,41 +271,37 @@ class WorkoutExerciseViewSet(ModelViewSet):
                 "rest_time": rest_time,
             }
 
-        return instance_map, workout_plan_id
+        return validated_instance_map, workout_plan_id
 
+    def _nullify_orders_batch(self, instance_map):
+        """
+        Batch nullify orders for instances being updated.
+        """
+        instances_to_nullify = [item["instance"] for item in instance_map.values() if item["new_order"] is not None]
+        for instance in instances_to_nullify:
+            instance.order = 0
+        WorkoutExercise.objects.bulk_update(instances_to_nullify, ["order"])
+    
+    def _save_updates_batch(self, instance_map):
+        """
+        Batch save updated fields for all instances.
+        """
+        instances_to_update = []
+        for item in instance_map.values():
+            instance = item["instance"]
+            if item["new_order"] is not None:
+                instance.order = item["new_order"]
+            if item["new_exercise_id"] is not None:
+                instance.exercise_id = item["new_exercise_id"]
+            if item["repetitions"] is not None:
+                instance.repetitions = item["repetitions"]
+            if item["sets"] is not None:
+                instance.sets = item["sets"]
+            if item["rest_time"] is not None:
+                instance.rest_time = item["rest_time"]
+            instances_to_update.append(instance)
+        WorkoutExercise.objects.bulk_update(instances_to_update, ["order", "exercise_id", "repetitions", "sets", "rest_time"])
 
-    def _nullify_orders(self, instance_map):
-        """
-        Temporarily nullify the orders of instances being updated.
-        """
-        with transaction.atomic():
-            for item in instance_map.values():
-                instance = item["instance"]
-                if item["new_order"] is not None:
-                    if item["new_order"] < 0:
-                        raise ValidationError("Order must be a positive integer.")
-                    instance.order = 0  # Temporarily nullify
-                instance.save()
-
-
-    def _save_updates(self, instance_map):
-        """
-        Save updated fields for all instances.
-        """
-        with transaction.atomic():
-            for item in instance_map.values():
-                instance = item["instance"]
-                if item["new_order"] is not None:
-                    instance.order = item["new_order"]
-                if item["new_exercise_id"] is not None:
-                    instance.exercise_id = item["new_exercise_id"]
-                if item["repetitions"] is not None:
-                    instance.repetitions = item["repetitions"]
-                if item["sets"] is not None:
-                    instance.sets = item["sets"]
-                if item["rest_time"] is not None:
-                    instance.rest_time = item["rest_time"]
-                instance.save()
 
     @action(detail=True, methods=['delete'], url_path='delete', url_name='delete')
     def delete_workout_exercise(self, request, pk=None, *args, **kwargs):
