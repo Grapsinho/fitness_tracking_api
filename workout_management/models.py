@@ -4,6 +4,7 @@ from users.models import User
 from exercises.models import Exercise
 from django.utils.translation import gettext_lazy as _
 from django.db.models import F
+from django.core.exceptions import ValidationError
 
 class WorkoutPlan(models.Model):
     """
@@ -16,16 +17,36 @@ class WorkoutPlan(models.Model):
         ('Advanced', 'Advanced'),
     ]
 
+    WORKOUT_TAG_CHOICES = [
+        ('Weight Loss', 'Weight Loss'),
+        ('Strength Building', 'Strength Building'),
+        ('Cardiovascular Fitness', 'Cardiovascular Fitness'),
+        ('Flexibility', 'Flexibility'),
+        ('BodyBuilding', 'BodyBuilding'),
+    ]
+
 
     unique_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False, db_index=True)
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='workout_plans')
     title = models.CharField(max_length=100, help_text="Title of the workout plan")
     description = models.TextField(blank=True, help_text="Details about the workout plan")
     difficulty_level = models.CharField(max_length=20, choices=WORKOUT_DIFFICULTY_LEVEL)
-    workout_banner = models.ImageField(upload_to='workout_banners/', default='workout_banners/no-img-banner.jpg',    blank=True, null=True)
+    workout_banner = models.ImageField(upload_to='workout_banners/', default='workout_banners/no-img-banner.jpg',blank=True, null=True)
+    tags = models.JSONField(
+        default=list,
+        help_text="Tags describing the plan, e.g., ['strength', 'weight_loss']",
+        null=True, blank=True,
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def clean(self):
+        # Check if all tags in the list are valid
+        if self.tags:
+            invalid_tags = [tag for tag in self.tags if tag not in dict(self.WORKOUT_TAG_CHOICES)]
+            if invalid_tags:
+                raise ValidationError(f"Invalid tags: {', '.join(invalid_tags)}")
+        super().clean()
 
     def delete(self, *args, **kwargs):
         # Delete the workout banner file

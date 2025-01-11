@@ -2,12 +2,39 @@ from rest_framework import serializers
 from .models import WorkoutPlan, WorkoutExercise
 from django.db.models import Q
 from exercises.serializers import ListExerciseSerializer
+from rest_framework.exceptions import ValidationError
+from plan_recommendations.models import GoalWorkoutMapping
 
 class CreateWorkoutPlanSerializer(serializers.ModelSerializer):
 
+    WORKOUT_TAG_CHOICES = [
+        ('Weight Loss', 'Weight Loss'),
+        ('Strength Building', 'Strength Building'),
+        ('Cardiovascular Fitness', 'Cardiovascular Fitness'),
+        ('Flexibility', 'Flexibility'),
+        ('BodyBuilding', 'BodyBuilding'),
+    ]
+    
+    tags = serializers.ListField(
+        child=serializers.ChoiceField(choices=WORKOUT_TAG_CHOICES),
+        required=True,
+    )
+
     class Meta:
         model = WorkoutPlan
-        fields = ('title', 'difficulty_level', 'description', 'workout_banner')
+        fields = ('title', 'difficulty_level', 'description', 'workout_banner', "tags")
+    
+    def validate_tags(self, tags):
+        print(tags)
+        if not tags:
+            raise serializers.ValidationError("At least one tag must be provided.")
+    
+        if not isinstance(tags, list):
+            raise ValidationError("Tags required must be a list.")
+        if not all(isinstance(item, str) for item in tags):
+            raise ValidationError("All items in the tags list must be strings.")
+        
+        return tags
 
     def create(self, validated_data):
 
@@ -23,6 +50,7 @@ class CreateWorkoutPlanSerializer(serializers.ModelSerializer):
                 difficulty_level=validated_data['difficulty_level'],
                 description=validated_data['description'],
                 workout_banner=workout_banner,
+                tags=validated_data['tags']
             )
         else:
             workout_plan = WorkoutPlan.objects.create(
@@ -30,6 +58,13 @@ class CreateWorkoutPlanSerializer(serializers.ModelSerializer):
                 created_by=user,
                 difficulty_level=validated_data['difficulty_level'],
                 description=validated_data['description'],
+                tags=validated_data['tags']
+            )
+        
+        for tag in validated_data['tags']:
+            GoalWorkoutMapping.objects.get_or_create(
+                goal_type=tag,
+                workout_plan=workout_plan
             )
 
         return workout_plan

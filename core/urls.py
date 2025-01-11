@@ -14,6 +14,7 @@ urlpatterns = [
     path('fitness_goal/', include("fitness_goal.urls")),
     path('exercises/', include("exercises.urls")),
     path('workout_management/', include("workout_management.urls")),
+    path('user_recommendations/', include("plan_recommendations.urls")),
 
     path('silk/', include('silk.urls', namespace='silk')),
 
