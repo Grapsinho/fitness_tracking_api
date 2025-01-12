@@ -3,10 +3,9 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from users.models import FitnessGoal
-from .models import GoalWorkoutMapping
 from workout_management.models import WorkoutPlan
 from workout_management.serializers import WorkoutPlanDetailSerializer
-from django.db.models import Prefetch
+from django.core.cache import cache
 
 from rest_framework.pagination import PageNumberPagination
 
@@ -25,6 +24,15 @@ class RecommendationView(APIView):
     def get(self, request):
         user = request.user
 
+        # Cache key and version
+        cache_key = f"recommendations_user_{user.id}"
+        version = cache.get(f"recommendation_version_{user.id}", 1)  # Default version is 1
+
+        # Try to fetch recommendations from the cache
+        cached_data = cache.get(cache_key, version=version)
+        if cached_data:
+            return Response(cached_data, status=status.HTTP_200_OK)
+
         # Use values_list to fetch only relevant data for active goals
         active_goals = list(
             FitnessGoal.objects.filter(user=user, is_active=True)
@@ -37,14 +45,10 @@ class RecommendationView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        # Prefetch related mappings to reduce query count
-        goal_mappings = GoalWorkoutMapping.objects.filter(goal_type__in=active_goals).select_related('workout_plan')
-        prefetch_mapping = Prefetch('goalworkoutmapping_set', queryset=goal_mappings)
-
         # Fetch distinct workout plans related to active goals with prefetch
         recommended_plans = WorkoutPlan.objects.filter(
             goalworkoutmapping__goal_type__in=active_goals
-        ).distinct().select_related('created_by').prefetch_related(prefetch_mapping, "workout_exercises__exercise")
+        ).distinct().select_related('created_by').prefetch_related("workout_exercises__exercise")
 
         # Manually instantiate the paginator
         paginator = self.pagination_class()
@@ -53,7 +57,15 @@ class RecommendationView(APIView):
         page = paginator.paginate_queryset(recommended_plans, request)
         if page is not None:
             serializer = WorkoutPlanDetailSerializer(page, many=True)
-            return paginator.get_paginated_response(serializer.data)
+            paginated_data = paginator.get_paginated_response(serializer.data).data
+            # Cache the paginated response
+            cache.set(cache_key, paginated_data, timeout=3600, version=version)
+            return Response(paginated_data, status=status.HTTP_200_OK)
 
         serializer = WorkoutPlanDetailSerializer(recommended_plans, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        response_data = serializer.data
+
+        # Cache the full response
+        cache.set(cache_key, response_data, timeout=3600, version=version)
+
+        return Response(response_data, status=status.HTTP_200_OK)

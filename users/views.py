@@ -10,6 +10,8 @@ from .throttling import LoginRateThrottle
 from rest_framework.exceptions import Throttled
 from .models import User, FitnessGoal
 from fitness_goal.serializers import ListFitnessGoalSerializer
+from django.db.models import Count, Q
+from django.core.cache import cache
 
 
 class RegisterUser(generics.CreateAPIView):
@@ -114,29 +116,55 @@ class LogoutUser(APIView):
 
 class CurrentUserDetail(APIView):
     permission_classes = [IsAuthenticated]
-    serializer_class = UserProfileSerializer  # Add the serializer_class
+    serializer_class = UserProfileSerializer
 
     def get(self, request):
         user = request.user
+        cache_key = f"user_detail_{user.id}"
+        cached_data = cache.get(cache_key)
+
+        if cached_data:
+            return Response(cached_data)
+
+        # Deactivate expired fitness goals
+        FitnessGoal.objects.deactivate_expired(user=user)
+
+        # Prefetch fitness goals related data
+        fitness_goals_queryset = (
+            user.fitness_goals
+            .select_related('user')
+            .annotate(
+                total_goals=Count('id'),
+                active_goals=Count('id', filter=Q(is_active=True))
+            )
+        )
+
+        # Apply `is_active` filter if provided
+        is_active = request.query_params.get('is_active_goals')
+        if is_active is not None:
+            is_active = is_active.lower() == 'true'
+            fitness_goals_queryset = fitness_goals_queryset.filter(is_active=is_active)
+
+        # Fetch aggregated metadata
+        metadata = fitness_goals_queryset.aggregate(
+            total_goals=Count('id'),
+            active_goals=Count('id', filter=Q(is_active=True))
+        )
+        metadata['inactive_goals'] = metadata['total_goals'] - metadata['active_goals']
+
+        # Serialize the data
         serializer = self.serializer_class(user)
-        return Response(serializer.data, status=200)
+        response_data = serializer.data
+        response_data['fitness_goals'] = ListFitnessGoalSerializer(
+            fitness_goals_queryset, many=True
+        ).data
+        response_data['metadata_for_goals'] = metadata
 
+        # Cache the data for 1 hour
+        cache.set(cache_key, response_data, timeout=3600)
 
-class CurrentUserProfileUpdate(APIView):
-    permission_classes = [IsAuthenticated]
-    serializer_class = UpdateUserProfileSerializer
+        return Response(response_data)
 
-    def patch(self, request):
-        user = request.user
-        serializer = self.serializer_class(user, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({
-                "message": "Profile updated successfully.",
-                "user": serializer.data
-            }, status=status.HTTP_200_OK)
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class UserProfileView(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]
@@ -151,9 +179,14 @@ class UserProfileView(generics.RetrieveAPIView):
         return queryset
 
     def retrieve(self, request, *args, **kwargs):
-        """
-        Add filtering and metadata for fitness goals in the response.
-        """
+        unique_id = self.kwargs.get('unique_id')
+        cache_key = f"user_profile_{unique_id}"
+        cached_data = cache.get(cache_key)
+
+        if cached_data:
+            return Response(cached_data)
+
+        # Fetch the user profile
         instance = self.get_object()
 
         FitnessGoal.objects.deactivate_expired(user=instance)
@@ -179,7 +212,29 @@ class UserProfileView(generics.RetrieveAPIView):
             'active_goals': active_goals,
             'inactive_goals': inactive_goals,
         }
+
+        # Cache the data for 1 hour
+        cache.set(cache_key, response_data, timeout=3600)
+
         return Response(response_data)
+
+
+class CurrentUserProfileUpdate(APIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = UpdateUserProfileSerializer
+
+    def patch(self, request):
+        user = request.user
+        serializer = self.serializer_class(user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({
+                "message": "Profile updated successfully.",
+                "user": serializer.data
+            }, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class RefreshAccessTokenView(APIView):
     permission_classes = [AllowAny]
