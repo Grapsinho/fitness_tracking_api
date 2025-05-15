@@ -22,5 +22,8 @@ def invalidate_user_profile_cache(sender, instance, **kwargs):
     """
     Invalidate cache for UserProfileView when user profile changes.
     """
+    current_user_cache_key = f"user_detail_{instance.id}"
+    cache.delete(current_user_cache_key)
+
     user_profile_cache_key = f"user_profile_{instance.unique_id}"
     cache.delete(user_profile_cache_key)
